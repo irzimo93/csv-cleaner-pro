@@ -1,32 +1,29 @@
 
 import pandas as pd
 import argparse
-from pathlib import Path
 
 
 def clean_csv(input_file, output_file):
     try:
         df = pd.read_csv(input_file)
-
         original_rows = len(df)
 
         df = df.drop_duplicates()
         df = df.dropna(how="all")
 
-        cleaned_rows = len(df)
-        removed_rows = original_rows - cleaned_rows
+        removed = original_rows - len(df)
 
         df.to_csv(output_file, index=False)
 
-        print("\nCSV Cleaner Pro")
-        print("----------------------")
+        print("CSV Cleaner Pro")
+        print("--------------------")
         print(f"Original rows: {original_rows}")
-        print(f"Cleaned rows: {cleaned_rows}")
-        print(f"Removed rows: {removed_rows}")
-        print(f"Saved to: {output_file}")
+        print(f"Cleaned rows: {len(df)}")
+        print(f"Removed rows: {removed}")
+        print(f"Output file: {output_file}")
 
     except FileNotFoundError:
-        print("Error: Input file not found.")
+        print("Error: File not found.")
 
     except Exception as error:
         print(f"Error: {error}")
@@ -34,17 +31,14 @@ def clean_csv(input_file, output_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="CSV Cleaner Pro - Clean CSV files"
+        description="CSV Cleaner Pro"
     )
 
-    parser.add_argument("input", help="Input CSV file")
+    parser.add_argument("input")
     parser.add_argument(
-        "-o",
-        "--output",
-        default="cleaned.csv",
-        help="Output CSV file"
+        "-o", "--output",
+        default="cleaned.csv"
     )
 
     args = parser.parse_args()
-
     clean_csv(args.input, args.output)
