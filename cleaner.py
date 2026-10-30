@@ -1,60 +1,83 @@
 import csv
 import argparse
+from pathlib import Path
 
 
 def clean_csv(input_file, output_file):
+    source = Path(input_file).resolve()
+    destination = Path(output_file).resolve()
+
+    if source == destination:
+        print("Error: Input and output files must be different.")
+        return
+
+    original = 0
+    cleaned = 0
+    removed = 0
+    seen = set()
+
     try:
-        with open(input_file, "r", encoding="utf-8-sig", newline="") as f:
-            rows = list(csv.reader(f))
+        with open(source, "r", encoding="utf-8-sig", newline="") as infile:
+            reader = csv.reader(infile)
+            header = next(reader, None)
 
-        if not rows:
-            print("Error: CSV file is empty.")
-            return
+            if header is None:
+                print("Error: CSV file is empty.")
+                return
 
-        header = rows[0]
-        data = rows[1:]
+            header = [cell.strip() for cell in header]
 
-        unique_rows = []
-        seen = set()
+            with open(destination, "w", encoding="utf-8", newline="") as outfile:
+                writer = csv.writer(outfile)
+                writer.writerow(header)
 
-        for row in data:
-            if not any(cell.strip() for cell in row):
-                continue
+                for row in reader:
+                    original += 1
+                    row = [cell.strip() for cell in row]
 
-            key = tuple(row)
+                    if not any(row):
+                        removed += 1
+                        continue
 
-            if key not in seen:
-                seen.add(key)
-                unique_rows.append(row)
+                    key = tuple(row)
 
-        removed = len(data) - len(unique_rows)
+                    if key in seen:
+                        removed += 1
+                        continue
 
-        with open(output_file, "w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(header)
-            writer.writerows(unique_rows)
+                    seen.add(key)
+                    writer.writerow(row)
+                    cleaned += 1
 
-        print("\nCSV Cleaner Pro")
+        percentage = (removed / original * 100) if original else 0
+
+        print("\nCSV Cleaner Pro 2.1")
         print("----------------------")
-        print(f"Original rows: {len(data)}")
-        print(f"Cleaned rows: {len(unique_rows)}")
+        print(f"Original rows: {original}")
+        print(f"Cleaned rows: {cleaned}")
         print(f"Removed rows: {removed}")
-        print(f"Output file: {output_file}")
+        print(f"Cleanup rate: {percentage:.1f}%")
+        print(f"Output file: {destination}")
 
     except FileNotFoundError:
-        print("Error: File not found.")
+        print("Error: Input file not found.")
+    except PermissionError:
+        print("Error: Permission denied.")
+    except csv.Error as error:
+        print(f"CSV Error: {error}")
+    except OSError as error:
+        print(f"File Error: {error}")
 
-    except Exception as error:
-        print(f"Error: {error}")
 
+parser = argparse.ArgumentParser(
+    description="CSV Cleaner Pro - Clean CSV files"
+)
+parser.add_argument("input", help="Input CSV file")
+parser.add_argument(
+    "-o", "--output",
+    default="cleaned.csv",
+    help="Output CSV file"
+)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="CSV Cleaner Pro"
-    )
-
-    parser.add_argument("input")
-    parser.add_argument("-o", "--output", default="cleaned.csv")
-
-    args = parser.parse_args()
-    clean_csv(args.input, args.output)
+args = parser.parse_args()
+clean_csv(args.input, args.output)
