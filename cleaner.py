@@ -1,24 +1,43 @@
-
-import pandas as pd
+import csv
 import argparse
 
 
 def clean_csv(input_file, output_file):
     try:
-        df = pd.read_csv(input_file)
-        original_rows = len(df)
+        with open(input_file, "r", encoding="utf-8-sig", newline="") as f:
+            rows = list(csv.reader(f))
 
-        df = df.drop_duplicates()
-        df = df.dropna(how="all")
+        if not rows:
+            print("Error: CSV file is empty.")
+            return
 
-        removed = original_rows - len(df)
+        header = rows[0]
+        data = rows[1:]
 
-        df.to_csv(output_file, index=False)
+        unique_rows = []
+        seen = set()
 
-        print("CSV Cleaner Pro")
-        print("--------------------")
-        print(f"Original rows: {original_rows}")
-        print(f"Cleaned rows: {len(df)}")
+        for row in data:
+            if not any(cell.strip() for cell in row):
+                continue
+
+            key = tuple(row)
+
+            if key not in seen:
+                seen.add(key)
+                unique_rows.append(row)
+
+        removed = len(data) - len(unique_rows)
+
+        with open(output_file, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerows(unique_rows)
+
+        print("\nCSV Cleaner Pro")
+        print("----------------------")
+        print(f"Original rows: {len(data)}")
+        print(f"Cleaned rows: {len(unique_rows)}")
         print(f"Removed rows: {removed}")
         print(f"Output file: {output_file}")
 
@@ -35,11 +54,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("input")
-    parser.add_argument(
-        "-o", "--output",
-        default="cleaned.csv"
-    )
+    parser.add_argument("-o", "--output", default="cleaned.csv")
 
     args = parser.parse_args()
     clean_csv(args.input, args.output)
-
